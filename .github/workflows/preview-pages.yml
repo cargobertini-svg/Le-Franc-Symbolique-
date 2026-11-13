@@ -46,6 +46,12 @@ jobs:
           echo "Generated files:"
           find dist/client -maxdepth 2 -type f | sort | head -100
 
+      - name: Add GitHub Pages SPA fallback
+        run: |
+          cp dist/client/index.html dist/client/404.html
+          test -s dist/client/404.html
+          echo "SPA fallback generated: dist/client/404.html"
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
@@ -64,3 +70,16 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deployed website response
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          echo "Checking public endpoint: ${PAGES_URL}"
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-all-errors --retry-delay 8 --max-time 30 \
+            "${PAGES_URL}" -o /tmp/lfs-pages-index.html
+          grep -qi '<html' /tmp/lfs-pages-index.html
+          grep -q '/Le-Franc-Symbolique-/' /tmp/lfs-pages-index.html
+          echo "Public page returned HTTP 200 and contains the expected project base path."
