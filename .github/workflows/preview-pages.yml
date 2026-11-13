@@ -33,18 +33,18 @@ jobs:
       - name: Run tests
         run: bun run test
 
-      - name: Build static site
+      - name: Build static SPA
         run: bun run build
         env:
-          NITRO_PRESET: github_pages
+          GITHUB_PAGES: "true"
 
       - name: Verify static entry point
         run: |
-          test -s .output/public/index.html
+          test -s dist/client/index.html
           echo "Static entry point generated:"
-          ls -lh .output/public/index.html
+          ls -lh dist/client/index.html
           echo "Generated files:"
-          find .output/public -maxdepth 2 -type f | sort | head -100
+          find dist/client -maxdepth 2 -type f | sort | head -100
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
@@ -52,7 +52,7 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .output/public
+          path: dist/client
 
   deploy:
     environment:
