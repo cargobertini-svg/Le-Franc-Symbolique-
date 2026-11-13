@@ -6,21 +6,26 @@
 // Never set ssr.external or resolve.external: the Worker has no runtime module resolution, so
 // the build fails. Never add compression (compressPublicAssets, vite-plugin-compression):
 // hosting already compresses at the edge.
-// You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+
+const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
 
 export default defineConfig({
   vite: {
-    // GitHub Pages project-site prefix.
     base: "/Le-Franc-Symbolique-/",
   },
+  // Static GitHub Pages output does not need the Nitro server bundle.
+  ...(isGitHubPagesBuild ? { nitro: false } : {}),
   tanstackStart: {
-    prerender: {
-      enabled: true,
-      crawlLinks: true,
-      failOnError: true,
-    },
-    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
+    ...(isGitHubPagesBuild
+      ? {
+          spa: {
+            enabled: true,
+            maskPath: "/Le-Franc-Symbolique-/",
+            prerender: { outputPath: "/index.html" },
+          },
+        }
+      : {}),
     server: { entry: "server" },
   },
 });
