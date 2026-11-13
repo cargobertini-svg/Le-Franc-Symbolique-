@@ -2,13 +2,14 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/cloud-run-migration]
   pull_request:
     branches: [main]
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -20,3 +21,26 @@ jobs:
         run: bun run test
       - name: Build production bundle
         run: bun run build
+      - name: Inspect build output
+        shell: bash
+        run: |
+          echo "Build output directories:"
+          for dir in .output dist; do
+            if [ -d "$dir" ]; then
+              echo "::group::$dir"
+              find "$dir" -maxdepth 3 -type f | sort | head -200
+              echo "::endgroup::"
+            else
+              echo "$dir: not present"
+            fi
+          done
+      - name: Upload preview build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lfs-preview-build
+          path: |
+            .output/**
+            dist/**
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 7
